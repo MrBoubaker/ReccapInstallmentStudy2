@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Foldable Contracts: Group by Months or References</title>
+  <style>
+    /* Page Setup & Colors */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f7f9fc;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin: 16px;
+      color: #004080;
+    }
+
+    /* Container/Card */
+    .table-container {
+      max-width: 1200px;
+      margin: 0 auto 40px auto;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    /* Toggle Button */
+    .view-switch {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .view-switch button {
+      background: linear-gradient(45deg, #004080, #0066a2);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .view-switch button:hover {
+      background: linear-gradient(45deg, #003060, #005080);
+    }
+
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;
+    }
+
+    thead {
+      background: linear-gradient(45deg, #004080, #0066a2);
+      color: #fff;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: right; /* Numeric columns right-aligned */
+    }
+    th:first-child, td:first-child {
+      text-align: left; /* First column left-aligned */
+    }
+
+    /* Expandable Rows */
+    .master-row {
+      background-color: #f0f4f7;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .master-row:hover {
+      background-color: #e0ebf2;
+    }
+
+    /* Sub-row styling (Months or References) */
+    .sub-row {
+      background-color: #ffffff;
+      transition: background-color 0.2s ease, height 0.2s ease;
+    }
+    .sub-row:hover {
+      background-color: #fafafa;
+    }
+
+    /* Nested sub-row (e.g., References inside Months or Months inside References) */
+    .nested-row {
+      background-color: #fefefe;
+    }
+    .nested-row:hover {
+      background-color: #f9f9f9;
+    }
+
+    /* Collapsed by default */
+    .hidden {
+      display: none;
+    }
+
+    /* Toggle Sign Cell */
+    .toggle-cell {
+      width: 40px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .toggle-sign {
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #008000; /* Green */
+    }
+
+    /* Grand Total Row */
+    .grand-total {
+      background-color: #cde6cd; /* Light green tint */
+      font-weight: 700;
+      color: #004080;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Foldable Contracts</h1>
+  <div class="view-switch">
+    <button id="toggleViewBtn">Switch to Group by References</button>
+  </div>
+
+  <div class="table-container" id="tableContainer">
+    <!-- The table will be injected here by JavaScript. -->
+  </div>
+
+  <script>
+    /*************************************************
+     * 1. DATA DEFINITION
+     *************************************************/
+    const contractsData = [
+      {
+        id: 1,
+        name: "Contract 1",
+        total: 70000,
+        payed: 30000,
+        due: 40000,
+        references: [
+          {
+            code: "REF001",
+            monthlyAmounts: [
+              { month: "January",   total: 6000,  payed: 3000, due: 3000 },
+              { month: "February",  total: 8000,  payed: 4000, due: 4000 },
+              { month: "March",     total: 5000,  payed: 2000, due: 3000 },
+              { month: "April",     total: 7000,  payed: 4000, due: 3000 },
+              { month: "May",       total: 6500,  payed: 3000, due: 3500 },
+              { month: "June",      total: 7500,  payed: 4000, due: 3500 }
+            ]
+          },
+          {
+            code: "REF002",
+            monthlyAmounts: [
+              { month: "January",   total: 4000,  payed: 2000, due: 2000 },
+              { month: "February",  total: 6000,  payed: 3000, due: 3000 },
+              { month: "March",     total: 3000,  payed: 1000, due: 2000 },
+              { month: "April",     total: 5000,  payed: 3000, due: 2000 },
+              { month: "May",       total: 5500,  payed: 3000, due: 2500 },
+              { month: "June",      total: 6000,  payed: 2000, due: 4000 }
+            ]
+          }
+        ]
+      },
+      {
+        id: 2,
+        name: "Contract 2",
+        total: 150000,
+        payed: 70000,
+        due: 80000,
+        references: [
+          {
+            code: "REF010",
+            monthlyAmounts: [
+              { month: "January",   total: 10000, payed: 6000,  due: 4000 },
+              { month: "February",  total: 9000,  payed: 3000,  due: 6000 },
+              { month: "March",     total: 8000,  payed: 4000,  due: 4000 },
+              { month: "April",     total: 12000, payed: 7000,  due: 5000 },
+              { month: "May",       total: 13000, payed: 8000,  due: 5000 },
+              { month: "June",      total: 15000, payed: 7000,  due: 8000 }
+            ]
+          },
+          {
+            code: "REF011",
+            monthlyAmounts: [
+              { month: "January",   total: 8000,  payed: 4000,  due: 4000 },
+              { month: "February",  total: 7000,  payed: 2000,  due: 5000 },
+              { month: "March",     total: 10000, payed: 5000,  due: 5000 },
+              { month: "April",     total: 11000, payed: 4000,  due: 7000 },
+              { month: "May",       total: 9000,  payed: 4000,  due: 5000 },
+              { month: "June",      total: 10000, payed: 5000,  due: 5000 }
+            ]
+          },
+          {
+            code: "REF012",
+            monthlyAmounts: [
+              { month: "January",   total: 6000,  payed: 3000,  due: 3000 },
+              { month: "February",  total: 8000,  payed: 3000,  due: 5000 },
+              { month: "March",     total: 4000,  payed: 2000,  due: 2000 },
+              { month: "April",     total: 6000,  payed: 3000,  due: 3000 },
+              { month: "May",       total: 10000, payed: 6000,  due: 4000 },
+              { month: "June",      total: 8000,  payed: 2000,  due: 6000 }
+            ]
+          }
+        ]
+      },
+      {
+        id: 3,
+        name: "Contract 3",
+        total: 240000,
+        payed: 100000,
+        due: 140000,
+        references: [
+          {
+            code: "REF021",
+            monthlyAmounts: [
+              { month: "January",   total: 15000, payed: 8000,  due: 7000 },
+              { month: "February",  total: 16000, payed: 7000,  due: 9000 },
+              { month: "March",     total: 18000, payed: 9000,  due: 9000 },
+              { month: "April",     total: 20000, payed: 10000, due: 10000},
+              { month: "May",       total: 22000, payed: 12000, due: 10000},
+              { month: "June",      total: 24000, payed: 8000,  due: 16000}
+            ]
+          },
+          {
+            code: "REF022",
+            monthlyAmounts: [
+              { month: "January",   total: 20000, payed: 10000, due: 10000 },
+              { month: "February",  total: 22000, payed: 12000, due: 10000 },
+              { month: "March",     total: 20000, payed: 10000, due: 10000 },
+              { month: "April",     total: 24000, payed: 12000, due: 12000 },
+              { month: "May",       total: 25000, payed: 8000,  due: 17000 },
+              { month: "June",      total: 28000, payed: 14000, due: 14000 }
+            ]
+          }
+        ]
+      }
+    ];
+
+    /*************************************************
+     * 2. HELPER FUNCTIONS
+     *************************************************/
+    // Format number to 2 decimals with commas (N2).
+    function formatN2(value) {
+      return parseFloat(value)
+        .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Sum array of objects by a numeric field name
+    function sumByField(arr, field) {
+      return arr.reduce((acc, obj) => acc + (obj[field] || 0), 0);
+    }
+
+    // Generate a unique key for row toggling
+    function rowKey(...parts) {
+      return parts.join('-');
+    }
+
+    // A small toggler for rows, adding/removing the "hidden" class
+    function toggleRowGroup(className, signId) {
+      const rows = document.querySelectorAll(`.${className}`);
+      const signEl = document.getElementById(signId);
+
+      const isHidden = [...rows].every(row => row.classList.contains('hidden'));
+      if (isHidden) {
+        // Show rows
+        rows.forEach(r => r.classList.remove('hidden'));
+        if (signEl) signEl.textContent = '-';
+      } else {
+        // Hide rows
+        rows.forEach(r => r.classList.add('hidden'));
+        if (signEl) signEl.textContent = '+';
+      }
+    }
+
+    /*************************************************
+     * 3. RENDER: GROUP BY MONTHS
+     *    Contract -> expand -> Months -> expand -> References
+     *************************************************/
+    function renderGroupByMonths() {
+      // Build table HTML
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th class="toggle-cell"></th>
+              <th>Contract/Month/Reference</th>
+              <th>Total Amount</th>
+              <th>Payed Amount</th>
+              <th>Due Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      let grandTotal = 0;
+      let grandPayed = 0;
+      let grandDue = 0;
+      const totalContracts = contractsData.length;
+
+      contractsData.forEach(contract => {
+        const cKey = rowKey('contract', contract.id);
+
+        // Contract row
+        html += `
+          <tr class="master-row" onclick="toggleRowGroup('${cKey}-months','sign-${cKey}')" >
+            <td class="toggle-cell">
+              <span class="toggle-sign" id="sign-${cKey}">+</span>
+            </td>
+            <td>${contract.name}</td>
+            <td>${formatN2(contract.total)}</td>
+            <td>${formatN2(contract.payed)}</td>
+            <td>${formatN2(contract.due)}</td>
+          </tr>
+        `;
+
+        grandTotal += contract.total;
+        grandPayed += contract.payed;
+        grandDue   += contract.due;
+
+        // Summarize months from references data
+        // We'll gather monthly sums across *all references* to get the month's total.
+        const months = ["January","February","March","April","May","June"];
+        const monthTotals = months.map(monthName => {
+          let mTotal = 0, mPayed=0, mDue=0;
+          contract.references.forEach(ref => {
+            const ma = ref.monthlyAmounts.find(m => m.month === monthName);
+            if (ma) {
+              mTotal += ma.total;
+              mPayed += ma.payed;
+              mDue   += ma.due;
+            }
+          });
+          return { month: monthName, total: mTotal, payed: mPayed, due: mDue };
+        });
+
+        // For each month, build a row with toggler for references
+        monthTotals.forEach(mObj => {
+          const monthKey = rowKey(cKey, mObj.month);
+          html += `
+            <tr class="sub-row hidden ${cKey}-months" onclick="toggleRowGroup('${monthKey}-refs','sign-${monthKey}')" >
+              <td class="toggle-cell">
+                <span class="toggle-sign" id="sign-${monthKey}">+</span>
+              </td>
+              <td>${mObj.month}</td>
+              <td>${formatN2(mObj.total)}</td>
+              <td>${formatN2(mObj.payed)}</td>
+              <td>${formatN2(mObj.due)}</td>
+            </tr>
+          `;
+
+          // Now references inside this month:
+          // For each reference, show the monthlyAmounts for that month
+          contract.references.forEach(ref => {
+            const found = ref.monthlyAmounts.find(m => m.month === mObj.month);
+            if (found) {
+              // Each reference line is nested under the month
+              html += `
+                <tr class="nested-row hidden ${monthKey}-refs">
+                  <td></td>
+                  <td>${ref.code}</td>
+                  <td>${formatN2(found.total)}</td>
+                  <td>${formatN2(found.payed)}</td>
+                  <td>${formatN2(found.due)}</td>
+                </tr>
+              `;
+            }
+          });
+        });
+      });
+
+      // Grand total row
+      html += `
+        <tr class="grand-total">
+          <td></td>
+          <td>All Contracts (Count: ${totalContracts})</td>
+          <td>${formatN2(grandTotal)}</td>
+          <td>${formatN2(grandPayed)}</td>
+          <td>${formatN2(grandDue)}</td>
+        </tr>
+      `;
+
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    /*************************************************
+     * 4. RENDER: GROUP BY REFERENCES
+     *    Contract -> expand -> References -> expand -> Months
+     *************************************************/
+    function renderGroupByReferences() {
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th class="toggle-cell"></th>
+              <th>Contract/Reference/Month</th>
+              <th>Total Amount</th>
+              <th>Payed Amount</th>
+              <th>Due Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      let grandTotal = 0;
+      let grandPayed = 0;
+      let grandDue = 0;
+      const totalContracts = contractsData.length;
+
+      contractsData.forEach(contract => {
+        const cKey = rowKey('contract-ref', contract.id);
+
+        // Contract row
+        html += `
+          <tr class="master-row" onclick="toggleRowGroup('${cKey}-refs','sign-${cKey}')" >
+            <td class="toggle-cell">
+              <span class="toggle-sign" id="sign-${cKey}">+</span>
+            </td>
+            <td>${contract.name}</td>
+            <td>${formatN2(contract.total)}</td>
+            <td>${formatN2(contract.payed)}</td>
+            <td>${formatN2(contract.due)}</td>
+          </tr>
+        `;
+
+        grandTotal += contract.total;
+        grandPayed += contract.payed;
+        grandDue   += contract.due;
+
+        // For each reference, sum across the 6 months
+        contract.references.forEach(ref => {
+          const refTotal = sumByField(ref.monthlyAmounts, 'total');
+          const refPayed = sumByField(ref.monthlyAmounts, 'payed');
+          const refDue   = sumByField(ref.monthlyAmounts, 'due');
+
+          const refKey = rowKey(cKey, ref.code);
+          // Reference row
+          html += `
+            <tr class="sub-row hidden ${cKey}-refs" onclick="toggleRowGroup('${refKey}-months','sign-${refKey}')" >
+              <td class="toggle-cell">
+                <span class="toggle-sign" id="sign-${refKey}">+</span>
+              </td>
+              <td>${ref.code}</td>
+              <td>${formatN2(refTotal)}</td>
+              <td>${formatN2(refPayed)}</td>
+              <td>${formatN2(refDue)}</td>
+            </tr>
+          `;
+
+          // Now the months for this reference
+          ref.monthlyAmounts.forEach(mObj => {
+            html += `
+              <tr class="nested-row hidden ${refKey}-months">
+                <td></td>
+                <td>${mObj.month}</td>
+                <td>${formatN2(mObj.total)}</td>
+                <td>${formatN2(mObj.payed)}</td>
+                <td>${formatN2(mObj.due)}</td>
+              </tr>
+            `;
+          });
+        });
+      });
+
+      // Grand total row
+      html += `
+        <tr class="grand-total">
+          <td></td>
+          <td>All Contracts (Count: ${totalContracts})</td>
+          <td>${formatN2(grandTotal)}</td>
+          <td>${formatN2(grandPayed)}</td>
+          <td>${formatN2(grandDue)}</td>
+        </tr>
+      `;
+
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    /*************************************************
+     * 5. MAIN RENDER LOGIC & VIEW SWITCH
+     *************************************************/
+    let currentView = 'months'; // default
+
+    function renderTable() {
+      const container = document.getElementById('tableContainer');
+      if (currentView === 'months') {
+        container.innerHTML = renderGroupByMonths();
+      } else {
+        container.innerHTML = renderGroupByReferences();
+      }
+    }
+
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    toggleViewBtn.addEventListener('click', () => {
+      if (currentView === 'months') {
+        currentView = 'references';
+        toggleViewBtn.textContent = 'Switch to Group by Months';
+      } else {
+        currentView = 'months';
+        toggleViewBtn.textContent = 'Switch to Group by References';
+      }
+      renderTable();
+    });
+
+    // On first load
+    renderTable();
+  </script>
+</body>
+</html>
